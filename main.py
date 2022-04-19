@@ -1,13 +1,16 @@
-from xml.etree.ElementTree import ProcessingInstruction
+from distutils.command.config import config
+from logging import getLoggerClass
 import pygame
 import os
 import random
 import math
 import sys
+import neat
 
 pygame.init()
 
 # Global Constants
+
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -29,6 +32,8 @@ LARGE_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.pn
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
 FONT = pygame.font.Font('freesansbold.ttf', 20)
+
+
 
 class Dinosaur:
     X_POS = 80
@@ -71,14 +76,85 @@ class Dinosaur:
     def draw(self,SCREEN):
         SCREEN.blit(self.image, (self.rect.x, self.rect.y))
 
-def main():
-    global game_speed , x_pos_bg , y_pos_bg,points 
+
+
+class Obstacle:
+    def __init__(self, image, number_of_cacti):
+        self.image = image
+        self.type = number_of_cacti
+        self.rect = self.image[self.type].get_rect()
+        self.rect.x = SCREEN_WIDTH
+
+    def update(self):
+        self.rect.x -= game_speed
+        if self.rect.x < -self.rect.width:
+            obstacles.pop()
+
+    def draw(self, SCREEN):
+        SCREEN.blit(self.image[self.type], self.rect)
+
+
+class SmallCactus(Obstacle):
+    def __init__(self, image, number_of_cacti):
+        super().__init__(image, number_of_cacti)
+        self.rect.y = 325
+
+
+class LargeCactus(Obstacle):
+    def __init__(self, image, number_of_cacti):
+        super().__init__(image, number_of_cacti)
+        self.rect.y = 300
+
+def remove(index):
+    dinosaurs.pop(index)
+    ge.pop(index)
+    nets.pop(index)
+
+
+def distance(pos_a, pos_b):
+    dx = pos_a[0]-pos_b[0]
+    dy = pos_a[1]-pos_b[1]
+    return math.sqrt(dx**2+dy**2)
+
+
+global GEN
+GEN =0
+
+def count_gens():
+    global GEN
+    GEN += 1
+    mizamonke = FONT.render(f'GENERATION: {str(GEN)}' , True, (0,0,0))
+    print(GEN)
+    SCREEN.blit(mizamonke,(400,100))
+
+
+def eval_genomes(genomes,config):
+
+
+    global game_speed , x_pos_bg , y_pos_bg,obstacles, dinosaurs, ge, nets ,points 
     clock = pygame.time.Clock()
+    
+
     points =0
-    dinosaurs = [Dinosaur()]
+
+    obstacles = []
+    dinosaurs = []
+
+    ge = []
+    nets = []
+
     x_pos_bg = 0
     y_pos_bg = 380
     game_speed = 20
+
+
+    for genome_id , genome in genomes:
+        dinosaurs.append(Dinosaur())
+        ge.append(genome)
+        net = neat.nn.FeedForwardNetwork.create(genome,config)
+        nets.append(net)
+        genome.fitness =0
+
 
     def score():
         global points, game_speed
@@ -110,20 +186,68 @@ def main():
         for dinosaur in dinosaurs:
             dinosaur.update()
             dinosaur.draw(SCREEN)
+        
+        if len(dinosaurs) == 0:
+            break
 
-        user_input = pygame.key.get_pressed()
+        if len(obstacles) == 0:
+            rand_int = random.randint(0, 1)
+            if rand_int == 0:
+                obstacles.append(SmallCactus(SMALL_CACTUS, random.randint(0, 2)))
+            elif rand_int == 1:
+                obstacles.append(LargeCactus(LARGE_CACTUS, random.randint(0, 2)))
+
+        for obstacle in obstacles:
+            obstacle.draw(SCREEN)
+            obstacle.update()
+            for i, dinosaur in enumerate(dinosaurs):
+                if dinosaur.rect.colliderect(obstacle.rect):
+                    ge[i].fitness -= 1
+                    count_gens()
+                    print("bruh")
+                    print(len(dinosaurs))
+                    remove(i)
+
 
         for i, dinosaur in enumerate(dinosaurs):
-            if user_input[pygame.K_SPACE]:
+            output = nets[i].activate((dinosaur.rect.y,
+            distance((dinosaur.rect.x, dinosaur.rect.y),
+            obstacle.rect.midtop)))
+
+            if output[0] > 0.5 and dinosaur.rect.y == dinosaur.Y_POS:
                 dinosaur.dino_jump = True
                 dinosaur.dino_run = False
+        
         score()
         background()
         clock.tick(30)
         pygame.display.update()
 
 
-main()
+
+
+
+def run(config_path):
+    config = neat.config.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet,
+        neat.DefaultStagnation,
+        config_path
+    )
+
+    pop = neat.Population(config)
+    pop.run(eval_genomes, 50)
+
+
+
+if __name__ == '__main__':
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir,'config.txt')
+    run(config_path)
+
+
+
 
 
 
