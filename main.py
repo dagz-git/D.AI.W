@@ -1,5 +1,3 @@
-from distutils.command.config import config
-from logging import getLoggerClass
 import pygame
 import os
 import random
@@ -9,25 +7,28 @@ import neat
 
 pygame.init()
 
-# Global Constants
-
 SCREEN_HEIGHT = 600
 SCREEN_WIDTH = 1100
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+options = [['Dino','Cactus']]
 
-RUNNING = [pygame.image.load(os.path.join("Assets/Dino", "DinoRun1.png")),
-           pygame.image.load(os.path.join("Assets/Dino", "DinoRun2.png"))]
+choice = options[0]
+character = choice[0]
+obst = choice[1]
 
-JUMPING = pygame.image.load(os.path.join("Assets/Dino", "DinoJump.png"))
+RUNNING = [pygame.image.load(os.path.join(f"Assets/{character}", "DinoRun1.png")),
+           pygame.image.load(os.path.join(f"Assets/{character}", "DinoRun2.png"))]
+
+JUMPING = pygame.image.load(os.path.join(f"Assets/{character}", "DinoJump.png"))
 
 
-SMALL_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "SmallCactus3.png"))]
+SMALL_CACTUS = [pygame.image.load(os.path.join(f"Assets/{obst}", "SmallCactus1.png")),
+                pygame.image.load(os.path.join(f"Assets/{obst}", "SmallCactus2.png")),
+                pygame.image.load(os.path.join(f"Assets/{obst}", "SmallCactus3.png"))]
 
-LARGE_CACTUS = [pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus1.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus2.png")),
-                pygame.image.load(os.path.join("Assets/Cactus", "LargeCactus3.png"))]
+LARGE_CACTUS = [pygame.image.load(os.path.join(f"Assets/{obst}", "LargeCactus1.png")),
+                pygame.image.load(os.path.join(f"Assets/{obst}", "LargeCactus2.png")),
+                pygame.image.load(os.path.join(f"Assets/{obst}", "LargeCactus3.png"))]
 
 BG = pygame.image.load(os.path.join("Assets/Other", "Track.png"))
 
@@ -203,9 +204,6 @@ def eval_genomes(genomes,config):
             for i, dinosaur in enumerate(dinosaurs):
                 if dinosaur.rect.colliderect(obstacle.rect):
                     ge[i].fitness -= 1
-                    count_gens()
-                    print("bruh")
-                    print(len(dinosaurs))
                     remove(i)
 
 
@@ -222,8 +220,6 @@ def eval_genomes(genomes,config):
         background()
         clock.tick(30)
         pygame.display.update()
-
-
 
 
 
@@ -245,20 +241,5 @@ if __name__ == '__main__':
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir,'config.txt')
     run(config_path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
